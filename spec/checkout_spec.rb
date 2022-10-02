@@ -7,14 +7,13 @@ require 'spend_based_promotion'
 describe Checkout do
   let(:subject) { Checkout.new(promotions:) }
 
-  let(:product_one) { Product.new(product_code: '10o01', name: 'Product one', price: 10) }
-  let(:product_two) { Product.new(product_code: '10o02', name: 'Product two', price: 30) }
-  let(:product_three) { Product.new(product_code: '10o03', name: 'Product three', price: 50) }
-  let(:product_four) { Product.new(product_code: '10o04', name: 'Product four', price: 80) }
+  let(:product_one) { Product.new(product_code: '001', name: 'Product one', price: 9.25) }
+  let(:product_two) { Product.new(product_code: '002', name: 'Product two', price: 45.00) }
+  let(:product_three) { Product.new(product_code: '003', name: 'Product three', price: 19.95) }
 
   let(:promotions) do
     [
-      ItemsBasedPromotion.new(discount_percentage: 0.75, product_code: '10o01', min_quantity: 2),
+      ItemsBasedPromotion.new(discount_percentage: 0.75, product_code: '001', min_quantity: 2),
       SpendBasedPromotion.new(discount_percentage: 10, spend_limit: 60)
     ]
   end
@@ -23,7 +22,6 @@ describe Checkout do
     product_one
     product_two
     product_three
-    product_four
 
     promotions
   end
@@ -59,20 +57,35 @@ describe Checkout do
         it 'does apply items based promotion' do
           subject.scan(product_one)
           subject.scan(product_one)
+          subject.scan(product_three)
 
           total = subject.total
 
-          expect(total).not_to eq(product_one.price + product_one.price)
-          expect(total).to eq(18.5)
+          expect(total).not_to eq(product_one.price + product_one.price + product_three.price)
+          expect(total).to eq(36.95)
         end
 
-        it 'does apply items spend based promotion' do
-          subject.scan(product_four)
+        it 'does apply spend based promotion' do
+          subject.scan(product_one)
+          subject.scan(product_two)
+          subject.scan(product_three)
 
           total = subject.total
 
-          expect(total).not_to eq(product_four)
-          expect(total).to eq(72.0)
+          expect(total).not_to eq(product_one.price + product_two.price + product_three.price)
+          expect(total).to eq(66.78)
+        end
+
+        it 'do apply both items spend based promotion and spend based promotion' do
+          subject.scan(product_one)
+          subject.scan(product_two)
+          subject.scan(product_one)
+          subject.scan(product_three)
+
+          total = subject.total
+
+          expect(total).not_to eq(product_one.price + product_two.price + product_one.price + product_three.price)
+          expect(total).to eq(73.76)
         end
       end
     end
